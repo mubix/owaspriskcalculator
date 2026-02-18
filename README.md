@@ -71,4 +71,4 @@ This project is not affiliated with or endorsed by the OWASP Foundation.
 
 ## License
 
-[MIT](LICENSE)
+[BSD 3-Clause](LICENSE)
