@@ -5,885 +5,403 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OWASP Risk Rating Calculator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg-primary:#0c0e14;
-  --bg-secondary:#12151e;
-  --bg-card:#181c28;
-  --bg-card-hover:#1e2233;
-  --border:#2a2f42;
-  --border-accent:#353b54;
-  --text-primary:#e8eaf0;
-  --text-secondary:#8b90a5;
-  --text-muted:#5c6178;
-  --accent-blue:#4d8eff;
-  --accent-cyan:#00d4aa;
-  --note-color:#6b7394;
-  --low-color:#22c55e;
-  --medium-color:#eab308;
-  --high-color:#f97316;
-  --critical-color:#ef4444;
-  --note-bg:rgba(107,115,148,0.1);
-  --low-bg:rgba(34,197,94,0.1);
-  --medium-bg:rgba(234,179,8,0.1);
-  --high-bg:rgba(249,115,22,0.1);
-  --critical-bg:rgba(239,68,68,0.12);
-  --font-mono:'JetBrains Mono',monospace;
-  --font-sans:'Source Sans 3',system-ui,sans-serif;
-  --radius:8px;
-  --radius-lg:12px;
+  --bg:#0b0d13;--bg2:#11141c;--bg3:#171b26;--bg4:#1d2230;
+  --border:#252a3a;--border2:#2f3548;
+  --text:#e4e6ed;--text2:#8a8fa6;--text3:#5a5f75;
+  --blue:#4d8eff;--cyan:#00d4aa;
+  --note-c:#6b7394;--low-c:#22c55e;--med-c:#eab308;--high-c:#f97316;--crit-c:#ef4444;
+  --note-bg:rgba(107,115,148,0.08);--low-bg:rgba(34,197,94,0.08);--med-bg:rgba(234,179,8,0.08);--high-bg:rgba(249,115,22,0.08);--crit-bg:rgba(239,68,68,0.1);
+  --unset-c:#ef4444;--unset-bg:rgba(239,68,68,0.06);--unset-border:rgba(239,68,68,0.25);
+  --mono:'JetBrains Mono',monospace;--sans:'Source Sans 3',system-ui,sans-serif;
 }
-html{font-size:15px;scroll-behavior:smooth}
-body{
-  font-family:var(--font-sans);
-  background:var(--bg-primary);
-  color:var(--text-primary);
-  line-height:1.6;
-  min-height:100vh;
-}
-body::before{
-  content:'';position:fixed;inset:0;z-index:-1;
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 10%,rgba(77,142,255,0.04),transparent),
-    radial-gradient(ellipse 60% 50% at 80% 90%,rgba(0,212,170,0.03),transparent);
-}
+html{font-size:14px}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh}
 
-/* ── Layout ── */
-.page-header{
-  padding:2.5rem 2rem 1.5rem;
-  text-align:center;
-  border-bottom:1px solid var(--border);
-  background:var(--bg-secondary);
-}
-.page-header h1{
-  font-family:var(--font-mono);font-size:1.6rem;font-weight:700;
-  letter-spacing:-0.02em;color:var(--text-primary);
-  margin-bottom:0.3rem;
-}
-.page-header h1 span{color:var(--accent-cyan)}
-.page-header p{font-size:0.88rem;color:var(--text-secondary);max-width:600px;margin:0 auto}
-.page-header p a{color:var(--accent-blue);text-decoration:none}
-.page-header p a:hover{text-decoration:underline}
+.hdr{padding:0.8rem 1.5rem 0.5rem;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap}
+.hdr h1{font-family:var(--mono);font-size:1.1rem;font-weight:700;white-space:nowrap}
+.hdr h1 span{color:var(--cyan)}
+.hdr-r{margin-left:auto;display:flex;gap:0.4rem;align-items:center}
+.hdr-link{font-size:0.7rem;color:var(--text2);text-decoration:none;margin-right:0.3rem}
+.hdr-link:hover{color:var(--blue)}
+.btn{font-family:var(--mono);font-size:0.66rem;font-weight:600;padding:0.25rem 0.6rem;border-radius:4px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.btn:hover{border-color:var(--blue);color:var(--blue)}
+.btn.copied{border-color:var(--low-c);color:var(--low-c)}
 
-.main{max-width:1280px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+.main{max-width:1400px;margin:0 auto;padding:0.6rem 1rem 0.4rem}
+.top-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem}
+.half{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem}
+@media(max-width:1100px){.top-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.half{grid-template-columns:1fr}}
 
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
-@media(max-width:900px){.grid-2{grid-template-columns:1fr}}
+.col-title{font-family:var(--mono);font-size:0.76rem;font-weight:700;padding:0.3rem 0.5rem;background:var(--bg3);border:1px solid var(--border);border-radius:5px 5px 0 0;color:var(--text)}
+.col-body{background:var(--bg2);border:1px solid var(--border);border-top:none;border-radius:0 0 5px 5px;padding:0.4rem 0.5rem}
 
-.section-title{
-  font-family:var(--font-mono);font-size:1.05rem;font-weight:600;
-  color:var(--text-primary);margin-bottom:1rem;
-  padding-bottom:0.5rem;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:0.5rem;
-}
-.section-title .icon{
-  width:20px;height:20px;border-radius:4px;display:inline-flex;
-  align-items:center;justify-content:center;font-size:0.7rem;
-  font-weight:700;color:#fff;flex-shrink:0;
-}
+.f-row{margin-bottom:0.35rem}
+.f-row:last-child{margin-bottom:0}
+.f-label{display:flex;align-items:center;gap:0.3rem;margin-bottom:0.1rem}
+.f-name{font-size:0.73rem;font-weight:600;color:var(--text)}
+.f-tip{width:13px;height:13px;border-radius:50%;border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;font-size:0.5rem;font-weight:700;color:var(--text3);cursor:help;position:relative;flex-shrink:0}
+.f-tip:hover{border-color:var(--blue);color:var(--blue)}
+.f-tip .tt{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border2);border-radius:5px;padding:0.35rem 0.5rem;font-size:0.7rem;font-weight:400;color:var(--text2);min-width:190px;max-width:260px;z-index:200;line-height:1.4;box-shadow:0 6px 20px rgba(0,0,0,0.5);font-family:var(--sans);text-align:left}
+.f-tip:hover .tt{display:block}
+.f-badge{margin-left:auto;font-family:var(--mono);font-size:0.62rem;font-weight:600;padding:1px 5px;border-radius:3px;min-width:18px;text-align:center}
 
-/* ── Factor Cards ── */
-.factor-group{margin-bottom:1.5rem}
-.factor-group-title{
-  font-size:0.78rem;font-weight:600;text-transform:uppercase;
-  letter-spacing:0.08em;color:var(--text-muted);margin-bottom:0.75rem;
-}
-.factor-card{
-  background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius);padding:0.75rem 1rem;
-  margin-bottom:0.5rem;transition:border-color 0.2s,background 0.2s;
-}
-.factor-card:hover{border-color:var(--border-accent);background:var(--bg-card-hover)}
-.factor-label{
-  display:flex;justify-content:between;align-items:center;margin-bottom:0.5rem;gap:0.5rem;
-}
-.factor-label .name{font-size:0.88rem;font-weight:600;color:var(--text-primary);flex:1}
-.factor-label .value-badge{
-  font-family:var(--font-mono);font-size:0.75rem;font-weight:600;
-  padding:2px 8px;border-radius:4px;min-width:28px;text-align:center;
-  transition:all 0.25s;
-}
-.factor-label .tooltip-icon{
-  width:18px;height:18px;border-radius:50%;border:1px solid var(--border-accent);
-  display:inline-flex;align-items:center;justify-content:center;
-  font-size:0.65rem;font-weight:700;color:var(--text-muted);cursor:help;
-  flex-shrink:0;position:relative;
-}
-.factor-label .tooltip-icon:hover{border-color:var(--accent-blue);color:var(--accent-blue)}
-.factor-label .tooltip-icon .tip{
-  display:none;position:absolute;bottom:calc(100% + 8px);right:-8px;
-  background:#1e2233;border:1px solid var(--border-accent);border-radius:6px;
-  padding:0.5rem 0.75rem;font-size:0.78rem;font-weight:400;color:var(--text-secondary);
-  min-width:220px;max-width:300px;z-index:100;line-height:1.5;
-  box-shadow:0 8px 24px rgba(0,0,0,0.4);font-family:var(--font-sans);
-}
-.factor-label .tooltip-icon:hover .tip{display:block}
+select.fs{width:100%;appearance:none;background:var(--bg3) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235a5f75' stroke-width='1.2' fill='none'/%3E%3C/svg%3E") no-repeat right 7px center;border:1px solid var(--border);border-radius:4px;padding:0.25rem 1.5rem 0.25rem 0.4rem;font-family:var(--sans);font-size:0.72rem;color:var(--text);cursor:pointer;transition:border-color 0.15s}
+select.fs:focus{outline:none;border-color:var(--blue)}
+select.fs option{background:var(--bg3);color:var(--text)}
+select.fs.unset{border-color:var(--unset-border);background-color:var(--unset-bg)}
+.f-badge.unset{background:var(--unset-bg);color:var(--unset-c)}
 
-select.factor-select{
-  width:100%;appearance:none;
-  background:var(--bg-secondary) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235c6178' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center;
-  border:1px solid var(--border);border-radius:6px;
-  padding:0.5rem 2rem 0.5rem 0.75rem;
-  font-family:var(--font-sans);font-size:0.82rem;color:var(--text-primary);
-  cursor:pointer;transition:border-color 0.2s;
-}
-select.factor-select:focus{outline:none;border-color:var(--accent-blue)}
-select.factor-select option{background:var(--bg-secondary);color:var(--text-primary)}
+.sub-score{display:flex;align-items:center;gap:0.4rem;margin-top:0.4rem;padding:0.3rem 0.4rem;background:var(--bg3);border:1px solid var(--border);border-radius:4px;font-size:0.7rem}
+.sub-score .sl{color:var(--text2);font-weight:500;white-space:nowrap}
+.sub-score .trk{flex:1;height:4px;background:var(--bg);border-radius:2px;overflow:hidden}
+.sub-score .fl{height:100%;border-radius:2px;transition:width 0.35s,background 0.25s}
+.sub-score .sv{font-family:var(--mono);font-size:0.7rem;font-weight:600;min-width:26px;text-align:right}
 
-/* ── Score Bars ── */
-.score-bar{
-  background:var(--bg-card);border:1px solid var(--border);
-  border-radius:var(--radius);padding:0.75rem 1rem;
-  margin-top:0.75rem;display:flex;align-items:center;gap:0.75rem;
-}
-.score-bar .label{font-size:0.82rem;font-weight:500;color:var(--text-secondary);white-space:nowrap}
-.score-bar .track{flex:1;height:6px;background:var(--bg-primary);border-radius:3px;overflow:hidden}
-.score-bar .fill{height:100%;border-radius:3px;transition:width 0.4s ease,background 0.3s}
-.score-bar .score-val{
-  font-family:var(--font-mono);font-size:0.88rem;font-weight:600;min-width:32px;text-align:right;
-}
+.sec-score{padding:0.35rem 0.5rem;border:1px solid;border-radius:4px;display:flex;align-items:center;gap:0.4rem;font-size:0.73rem;font-weight:600;transition:all 0.25s}
+.sec-score .trk{flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
+.sec-score .fl{height:100%;border-radius:2px;transition:width 0.35s,background 0.25s}
+.sec-score .sv{font-family:var(--mono);font-size:0.75rem;font-weight:700;min-width:30px;text-align:right}
 
-/* ── Results Panel ── */
-.results-panel{
-  margin-top:1.5rem;background:var(--bg-card);
-  border:1px solid var(--border);border-radius:var(--radius-lg);
-  overflow:hidden;
-}
-.results-grid{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border)}
-@media(max-width:600px){.results-grid{grid-template-columns:1fr}}
-.result-cell{
-  padding:1.25rem 1.5rem;text-align:center;
-  border-right:1px solid var(--border);
-}
-.result-cell:last-child{border-right:none}
-@media(max-width:600px){.result-cell{border-right:none;border-bottom:1px solid var(--border)}.result-cell:last-child{border-bottom:none}}
-.result-cell .rc-label{font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:0.4rem}
-.result-cell .rc-value{font-family:var(--font-mono);font-size:1.5rem;font-weight:700;transition:color 0.3s}
-.result-cell .rc-level{font-size:0.78rem;font-weight:600;margin-top:0.15rem;transition:color 0.3s}
+.notes-area{margin-top:0.3rem}
+.notes-toggle{font-size:0.62rem;font-weight:600;color:var(--text3);cursor:pointer;background:none;border:none;font-family:var(--sans);padding:0;display:flex;align-items:center;gap:0.2rem}
+.notes-toggle:hover{color:var(--text2)}
+.notes-toggle::before{content:'▸';font-size:0.55rem;transition:transform 0.15s;display:inline-block}
+.notes-toggle.open::before{transform:rotate(90deg)}
+.notes-box{display:none;margin-top:0.2rem}
+.notes-box.show{display:block}
+.notes-box textarea{width:100%;min-height:36px;max-height:100px;resize:vertical;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:0.3rem 0.4rem;font-family:var(--sans);font-size:0.7rem;color:var(--text);line-height:1.4}
+.notes-box textarea::placeholder{color:var(--text3)}
+.notes-box textarea:focus{outline:none;border-color:var(--blue)}
 
-.severity-banner{
-  padding:1.5rem;text-align:center;transition:background 0.3s;
-}
-.severity-banner .sev-label{font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-muted);margin-bottom:0.3rem}
-.severity-banner .sev-value{font-family:var(--font-mono);font-size:2rem;font-weight:700;letter-spacing:0.02em;transition:color 0.3s}
+.results{margin-top:0.6rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;background:var(--bg2);border:1px solid var(--border);border-radius:5px;overflow:hidden}
+@media(max-width:600px){.results{grid-template-columns:1fr}}
+.res-cell{padding:0.5rem 0.7rem;text-align:center;border-right:1px solid var(--border)}
+.res-cell:last-child{border-right:none}
+@media(max-width:600px){.res-cell{border-right:none;border-bottom:1px solid var(--border)}.res-cell:last-child{border-bottom:none}}
+.res-cell .rl{font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3)}
+.res-cell .rv{font-family:var(--mono);font-size:1.15rem;font-weight:700;margin:0.05rem 0;transition:color 0.25s}
+.res-cell .rs{font-size:0.68rem;font-weight:600;transition:color 0.25s}
 
-.vector-panel{
-  padding:1rem 1.5rem;border-top:1px solid var(--border);
-  display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;
-}
-.vector-panel .vec-label{font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);flex-shrink:0}
-.vector-panel .vec-value{
-  font-family:var(--font-mono);font-size:0.78rem;color:var(--accent-blue);
-  word-break:break-all;flex:1;
-}
-.vector-panel .vec-value a{color:var(--accent-blue);text-decoration:none}
-.vector-panel .vec-value a:hover{text-decoration:underline}
-.btn-copy{
-  background:var(--bg-secondary);border:1px solid var(--border);
-  border-radius:6px;padding:0.35rem 0.75rem;font-family:var(--font-mono);
-  font-size:0.72rem;color:var(--text-secondary);cursor:pointer;
-  transition:all 0.2s;flex-shrink:0;
-}
-.btn-copy:hover{border-color:var(--accent-blue);color:var(--accent-blue)}
-.btn-copy.copied{border-color:var(--low-color);color:var(--low-color)}
+.vec-row{margin-top:0.4rem;display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;padding:0.4rem 0.6rem;background:var(--bg2);border:1px solid var(--border);border-radius:5px}
+.vec-row .vl{font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);flex-shrink:0}
+.vec-row .vv{font-family:var(--mono);font-size:0.7rem;color:var(--blue);word-break:break-all;flex:1}
 
-/* ── Severity Matrix ── */
-.matrix-section{margin-top:1.5rem}
-.matrix-section summary{
-  font-family:var(--font-mono);font-size:0.88rem;font-weight:600;
-  color:var(--text-secondary);cursor:pointer;padding:0.5rem 0;
-  list-style:none;display:flex;align-items:center;gap:0.5rem;
-}
-.matrix-section summary::before{content:'▸';transition:transform 0.2s}
-.matrix-section[open] summary::before{transform:rotate(90deg)}
-.matrix-section summary:hover{color:var(--text-primary)}
-.severity-matrix{
-  margin-top:1rem;border-collapse:collapse;width:100%;max-width:500px;
-}
-.severity-matrix th,.severity-matrix td{
-  padding:0.6rem 1rem;text-align:center;font-size:0.82rem;
-  border:1px solid var(--border);
-}
-.severity-matrix th{
-  background:var(--bg-secondary);font-weight:600;color:var(--text-secondary);
-  font-family:var(--font-mono);font-size:0.75rem;text-transform:uppercase;
-  letter-spacing:0.05em;
-}
-.severity-matrix td{background:var(--bg-card)}
-.severity-matrix .cell-note{color:var(--note-color)}
-.severity-matrix .cell-low{color:var(--low-color);background:var(--low-bg)}
-.severity-matrix .cell-medium{color:var(--medium-color);background:var(--medium-bg)}
-.severity-matrix .cell-high{color:var(--high-color);background:var(--high-bg)}
-.severity-matrix .cell-critical{color:var(--critical-color);background:var(--critical-bg)}
-.severity-matrix .row-label{
-  text-align:right;font-weight:600;background:var(--bg-secondary);
-  font-family:var(--font-mono);font-size:0.75rem;text-transform:uppercase;
-  letter-spacing:0.05em;color:var(--text-secondary);
-}
-.severity-matrix .highlight-cell{
-  outline:2px solid;outline-offset:-2px;font-weight:700;
-}
+.imp-tog{display:flex;gap:0;border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-top:0.35rem}
+.imp-tog button{flex:1;padding:0.2rem 0.3rem;font-family:var(--sans);font-size:0.63rem;font-weight:600;border:none;background:var(--bg3);color:var(--text3);cursor:pointer;transition:all 0.15s;border-right:1px solid var(--border);white-space:nowrap}
+.imp-tog button:last-child{border-right:none}
+.imp-tog button.act{background:var(--blue);color:#fff}
+.imp-tog button:hover:not(.act){color:var(--text)}
 
-/* ── Impact toggle ── */
-.impact-toggle{
-  display:flex;background:var(--bg-secondary);border:1px solid var(--border);
-  border-radius:6px;overflow:hidden;margin-bottom:1rem;
-}
-.impact-toggle button{
-  flex:1;padding:0.5rem 0.75rem;font-family:var(--font-sans);font-size:0.78rem;
-  font-weight:600;border:none;background:transparent;color:var(--text-muted);
-  cursor:pointer;transition:all 0.2s;
-}
-.impact-toggle button.active{background:var(--accent-blue);color:#fff}
-.impact-toggle button:hover:not(.active){color:var(--text-primary)}
+.unset-warn{margin-bottom:0.4rem;padding:0.35rem 0.6rem;background:var(--unset-bg);border:1px solid var(--unset-border);border-radius:4px;font-size:0.7rem;color:var(--unset-c);display:none;align-items:center;gap:0.3rem}
+.unset-warn.show{display:flex}
+.unset-warn .uw-i{font-weight:700;font-size:0.8rem;flex-shrink:0}
 
-/* ── Footer ── */
-.page-footer{
-  text-align:center;padding:2rem;font-size:0.78rem;color:var(--text-muted);
-  border-top:1px solid var(--border);
-}
-.page-footer a{color:var(--accent-blue);text-decoration:none}
-.page-footer a:hover{text-decoration:underline}
+.mx-section{margin-top:0.4rem}
+.mx-section summary{font-family:var(--mono);font-size:0.7rem;font-weight:600;color:var(--text3);cursor:pointer;list-style:none;display:flex;align-items:center;gap:0.25rem}
+.mx-section summary::before{content:'▸';transition:transform 0.15s}
+.mx-section[open] summary::before{transform:rotate(90deg)}
+.mx-section summary:hover{color:var(--text2)}
+.mx-table{margin-top:0.3rem;border-collapse:collapse;width:100%;max-width:380px}
+.mx-table th,.mx-table td{padding:0.3rem 0.5rem;text-align:center;font-size:0.68rem;border:1px solid var(--border)}
+.mx-table th{background:var(--bg3);font-weight:600;color:var(--text2);font-family:var(--mono);font-size:0.62rem;text-transform:uppercase;letter-spacing:0.04em}
+.mx-table td{background:var(--bg2)}
+.mx-table .rl{text-align:right;font-weight:600;background:var(--bg3);font-family:var(--mono);font-size:0.62rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text2)}
+.cl-note{color:var(--note-c)}.cl-low{color:var(--low-c)}.cl-med{color:var(--med-c)}.cl-high{color:var(--high-c)}.cl-crit{color:var(--crit-c)}
+.bl-note{background:var(--note-bg)}.bl-low{background:var(--low-bg)}.bl-med{background:var(--med-bg)}.bl-high{background:var(--high-bg)}.bl-crit{background:var(--crit-bg)}
+.hl-cell{outline:2px solid;outline-offset:-2px;font-weight:700}
 
-/* ── Responsive ── */
-@media(max-width:600px){
-  .page-header{padding:1.5rem 1rem 1rem}
-  .page-header h1{font-size:1.2rem}
-  .main{padding:1rem 0.75rem 2rem}
-  .severity-banner .sev-value{font-size:1.5rem}
-}
+.ftr{text-align:center;padding:0.5rem;font-size:0.65rem;color:var(--text3);border-top:1px solid var(--border)}
+.ftr a{color:var(--blue);text-decoration:none}
+.ftr a:hover{text-decoration:underline}
 
-/* ── Color utilities ── */
-.c-note{color:var(--note-color)}.c-low{color:var(--low-color)}.c-medium{color:var(--medium-color)}.c-high{color:var(--high-color)}.c-critical{color:var(--critical-color)}
-.bg-note{background:var(--note-bg)}.bg-low{background:var(--low-bg)}.bg-medium{background:var(--medium-bg)}.bg-high{background:var(--high-bg)}.bg-critical{background:var(--critical-bg)}
-.fill-note{background:var(--note-color)}.fill-low{background:var(--low-color)}.fill-medium{background:var(--medium-color)}.fill-high{background:var(--high-color)}.fill-critical{background:var(--critical-color)}
+.c-note{color:var(--note-c)}.c-low{color:var(--low-c)}.c-med{color:var(--med-c)}.c-high{color:var(--high-c)}.c-crit{color:var(--crit-c)}
+.bg-note{background:var(--note-bg)}.bg-low{background:var(--low-bg)}.bg-med{background:var(--med-bg)}.bg-high{background:var(--high-bg)}.bg-crit{background:var(--crit-bg)}
+.fl-note{background:var(--note-c)}.fl-low{background:var(--low-c)}.fl-med{background:var(--med-c)}.fl-high{background:var(--high-c)}.fl-crit{background:var(--crit-c)}
+.bc-note{border-color:var(--note-c)}.bc-low{border-color:var(--low-c)}.bc-med{border-color:var(--med-c)}.bc-high{border-color:var(--high-c)}.bc-crit{border-color:var(--crit-c)}
+
+/* ══════ PRINT ══════ */
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+  @page{margin:0.5in;size:landscape}
+  body{background:#fff!important;color:#1a1a1a!important;font-size:10px!important}
+  .hdr{background:#f3f4f6!important;border-color:#d1d5db!important;padding:0.4rem 0.8rem!important}
+  .hdr h1{font-size:0.9rem!important;color:#1a1a1a!important}
+  .hdr h1 span{color:#0066cc!important}
+  .hdr-r .btn{display:none!important}
+  .hdr-link{display:none!important}
+  .main{padding:0.3rem 0.6rem!important}
+  .btn,.imp-tog,.mx-section,.notes-toggle,.unset-warn{display:none!important}
+  .col-title{background:#e5e7eb!important;color:#1a1a1a!important;border-color:#c0c4cc!important;font-size:0.68rem!important;padding:0.2rem 0.35rem!important}
+  .col-body{background:#fafafa!important;border-color:#c0c4cc!important;padding:0.25rem 0.35rem!important}
+  .f-row{margin-bottom:0.2rem!important}
+  .f-name{color:#1a1a1a!important;font-size:0.66rem!important}
+  .f-tip{display:none!important}
+  .f-badge{font-size:0.58rem!important}
+  select.fs{background:#eee!important;border-color:#aaa!important;color:#1a1a1a!important;font-size:0.64rem!important;padding:0.15rem 0.3rem!important;-webkit-appearance:none!important;appearance:none!important}
+  select.fs.unset{border-color:#dc2626!important;background:#fef2f2!important}
+  .sub-score,.sec-score{padding:0.2rem 0.35rem!important;font-size:0.62rem!important}
+  .sub-score .trk,.sec-score .trk{height:3px!important}
+  .sub-score .sv,.sec-score .sv{font-size:0.62rem!important}
+  .results{border-color:#c0c4cc!important;background:#fafafa!important}
+  .res-cell{border-color:#c0c4cc!important;padding:0.3rem!important}
+  .res-cell .rl{color:#555!important}
+  .res-cell .rv{font-size:0.9rem!important}
+  .vec-row{background:#f3f4f6!important;border-color:#c0c4cc!important}
+  .vec-row .vv{color:#0066cc!important}
+  .notes-box{display:block!important}
+  .notes-box textarea{background:#fff!important;border-color:#c0c4cc!important;color:#1a1a1a!important;font-size:0.64rem!important;min-height:auto!important;height:auto!important;overflow:visible!important}
+  .notes-print-label{display:block!important;font-size:0.56rem!important;font-weight:600!important;color:#666!important;margin-bottom:0.05rem!important}
+  .notes-box:has(textarea[data-empty="true"]){display:none!important}
+  .c-note{color:#6b7394!important}.c-low{color:#15803d!important}.c-med{color:#a16207!important}.c-high{color:#c2410c!important}.c-crit{color:#dc2626!important}
+  .bg-note{background:#eff0f5!important}.bg-low{background:#ecfdf5!important}.bg-med{background:#fefce8!important}.bg-high{background:#fff7ed!important}.bg-crit{background:#fef2f2!important}
+  .fl-note{background:#6b7394!important}.fl-low{background:#15803d!important}.fl-med{background:#a16207!important}.fl-high{background:#c2410c!important}.fl-crit{background:#dc2626!important}
+  .bc-note{border-color:#6b7394!important}.bc-low{border-color:#15803d!important}.bc-med{border-color:#a16207!important}.bc-high{border-color:#c2410c!important}.bc-crit{border-color:#dc2626!important}
+  .ftr{font-size:0.56rem!important;color:#888!important;padding:0.2rem!important;border-color:#d1d5db!important}
+}
+.notes-print-label{display:none}
 </style>
 </head>
 <body>
 
-<header class="page-header">
+<header class="hdr">
   <h1><span>OWASP</span> Risk Rating Calculator</h1>
-  <p>Based on the <a href="https://owasp.org/www-community/OWASP_Risk_Rating_Methodology" target="_blank" rel="noopener">OWASP Risk Rating Methodology</a> by Jeff Williams. Risk = Likelihood × Impact</p>
+  <div class="hdr-r">
+    <a class="hdr-link" href="https://owasp.org/www-community/OWASP_Risk_Rating_Methodology" target="_blank" rel="noopener">Methodology ↗</a>
+    <button class="btn" onclick="resetAll()">Reset</button>
+    <button class="btn" id="btn-vec" onclick="copyVector()">Copy Vector</button>
+    <button class="btn" id="btn-url" onclick="copyURL()">Copy URL</button>
+    <button class="btn" onclick="window.print()">⎙ Print / PDF</button>
+  </div>
 </header>
 
 <main class="main">
-  <div class="grid-2">
+  <div class="unset-warn" id="unset-warn"><span class="uw-i">⚠</span><span><strong>Unset factors:</strong> <span id="unset-list"></span></span></div>
 
-    <!-- ════════════════ LIKELIHOOD ════════════════ -->
+  <div class="top-grid">
+    <!-- ══════ LIKELIHOOD ══════ -->
     <div>
-      <div class="section-title">
-        <span class="icon" style="background:var(--accent-blue)">L</span>
-        Likelihood Factors
+      <div class="sec-score bc-note" id="sec-lf" style="margin-bottom:0.4rem">
+        <span style="font-size:0.7rem;color:var(--text2);font-weight:600">Likelihood</span>
+        <div class="trk"><div class="fl" id="bar-lf"></div></div>
+        <span class="sv" id="val-lf">—</span>
       </div>
-
-      <!-- Threat Agent Factors -->
-      <div class="factor-group">
-        <div class="factor-group-title">Threat Agent Factors</div>
-
-        <div class="factor-card">
-          <div class="factor-label">
-            <span class="name">Skill Level</span>
-            <span class="value-badge" id="badge-sl">1</span>
-            <span class="tooltip-icon">?<span class="tip">How technically skilled is this group of threat agents? Use the worst-case threat agent.</span></span>
+      <div class="half">
+        <!-- Threat Agent -->
+        <div>
+          <div class="col-title">Threat Agent Factors</div>
+          <div class="col-body">
+            <div class="f-row"><div class="f-label"><span class="f-name">Skill Level</span><span class="f-tip">?<span class="tt">How technically skilled is this group of threat agents?</span></span><span class="f-badge unset" id="b-sl">—</span></div><select class="fs unset" id="sl" onchange="calculate()"><option value="-1" selected disabled>— Select —</option><option value="0">0 - N/A</option><option value="1">1 - No technical skills</option><option value="2">2</option><option value="3">3 - Some technical skills</option><option value="4">4</option><option value="5">5 - Advanced computer user</option><option value="6">6 - Network and programming skills</option><option value="7">7</option><option value="8">8</option><option value="9">9 - Security penetration skills</option></select></div>
+            <div class="f-row"><div class="f-label"><span class="f-name">Motive</span><span class="f-tip">?<span class="tt">How motivated is this group of threat agents to find and exploit this vulnerability?</span></span><span class="f-badge unset" id="b-m">—</span></div><select class="fs unset" id="m" onchange="calculate()"><option value="-1" selected disabled>— Select —</option><option value="0">0 - N/A</option><option value="1">1 - Low or no reward</option><option value="2">2</option><option value="3">3</option><option value="4">4 - Possible reward</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9 - High reward</option></select></div>
+            <div class="f-row"><div class="f-label"><span class="f-name">Opportunity</span><span class="f-tip">?<span class="tt">What resources and opportunities are required for this group of threat agents to find and exploit this vulnerability?</span></span><span class="f-badge unset" id="b-o">—</span></div><select class="fs unset" id="o" onchange="calculate()"><option value="-1" selected disabled>— Select —</option><option value="0">0 - Full access or expensive resources required</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4 - Special access or resources required</option><option value="5">5</option><option value="6">6</option><option value="7">7 - Some access or resources required</option><option value="8">8</option><option value="9">9 - No access or resources required</option></select></div>
+            <div class="f-row"><div class="f-label"><span class="f-name">Size</span><span class="f-tip">?<span class="tt">How large is this group of threat agents?</span></span><span class="f-badge unset" id="b-s">—</span></div><select class="fs unset" id="s" onchange="calculate()"><option value="-1" selected disabled>— Select —</option><option value="0">0 - N/A</option><option value="1">1</option><option value="2">2 - Developers or system administrators</option><option value="3">3</option><option value="4">4 - Intranet users</option><option value="5">5 - Partners</option><option value="6">6 - Authenticated users</option><option value="7">7</option><option value="8">8</option><option value="9">9 - Anonymous Internet users</option></select></div>
+            <div class="sub-score"><span class="sl">Threat Agent</span><div class="trk"><div class="fl" id="bar-ta"></div></div><span class="sv" id="val-ta">—</span></div>
+            <div class="notes-area"><button class="notes-toggle" onclick="toggleNotes(this)">Notes</button><div class="notes-box"><span class="notes-print-label">Threat Agent Notes:</span><textarea id="notes-ta" placeholder="Reasoning for threat agent selections..."></textarea></div></div>
           </div>
-          <select class="factor-select" id="sl" onchange="calculate()">
-            <option value="1">1 — No technical skills</option>
-            <option value="3">3 — Some technical skills</option>
-            <option value="5">5 — Advanced computer user</option>
-            <option value="6">6 — Network and programming skills</option>
-            <option value="9">9 — Security penetration skills</option>
-          </select>
         </div>
-
-        <div class="factor-card">
-          <div class="factor-label">
-            <span class="name">Motive</span>
-            <span class="value-badge" id="badge-m">1</span>
-            <span class="tooltip-icon">?<span class="tip">How motivated is this group of threat agents to find and exploit this vulnerability?</span></span>
+        <!-- Vulnerability -->
+        <div>
+          <div class="col-title">Vulnerability Factors</div>
+          <div class="col-body">
+            <div class="f-row"><div class="f-label"><span class="f-name">Ease of Discovery</span><span class="f-tip">?<span class="tt">How easy is it for this group of threat agents to discover this vulnerability?</span></span><span class="f-badge unset" id="b-ed">—</span></div><select class="fs unset" id="ed" onchange="calculate()"><option value="-1" selected disabled>— Select —</option><option value="0">0 - N/A</option><option value="1">1 - Practically impossible</option><option value="2">2</option><option value="3">3 - Difficult</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7 - Easy</option><option value="8">8</option><option value="9">9 - Automated tools available</option></select></div>
+            <div class="f-row"><div class="f-label"><span class="f-name">Ease of Exploit</span><span class="f-tip">?<span class="tt">How easy is it for this group of threat agents to actually exploit this vulnerability?</span></span><span class="f-badge unset" id="b-ee">—</span></div><select class="fs unset" id="ee" onchange="calculate()"><option value="-1" selected disabled>— Select —</option><option value="0">0 - N/A</option><option value="1">1 - Theoretical</option><option value="2">2</option><option value="3">3 - Difficult</option><option value="4">4</option><option value="5">5 - Easy</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9 - Automated tools available</option></select></div>
+            <div class="f-row"><div class="f-label"><span class="f-name">Awareness</span><span class="f-tip">?<span class="tt">How well known is this vulnerability to this group of threat agents?</span></span><span class="f-badge unset" id="b-a">—</span></div><select class="fs unset" id="a" onchange="calculate()"><option value="-1" selected disabled>— Select —</option><option value="0">0 - N/A</option><option value="1">1 - Unknown</option><option value="2">2</option><option value="3">3</option><option value="4">4 - Hidden</option><option value="5">5</option><option value="6">6 - Obvious</option><option value="7">7</option><option value="8">8</option><option value="9">9 - Public knowledge</option></select></div>
+            <div class="f-row"><div class="f-label"><span class="f-name">Intrusion Detection</span><span class="f-tip">?<span class="tt">How likely is an exploit to be detected?</span></span><span class="f-badge unset" id="b-id">—</span></div><select class="fs unset" id="id" onchange="calculate()"><option value="-1" selected disabled>— Select —</option><option value="0">0 - N/A</option><option value="1">1 - Active detection in application</option><option value="2">2</option><option value="3">3 - Logged and reviewed</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8 - Logged without review</option><option value="9">9 - Not logged</option></select></div>
+            <div class="sub-score"><span class="sl">Vulnerability</span><div class="trk"><div class="fl" id="bar-vf"></div></div><span class="sv" id="val-vf">—</span></div>
+            <div class="notes-area"><button class="notes-toggle" onclick="toggleNotes(this)">Notes</button><div class="notes-box"><span class="notes-print-label">Vulnerability Notes:</span><textarea id="notes-vf" placeholder="Reasoning for vulnerability factor selections..."></textarea></div></div>
           </div>
-          <select class="factor-select" id="m" onchange="calculate()">
-            <option value="1">1 — Low or no reward</option>
-            <option value="4">4 — Possible reward</option>
-            <option value="9">9 — High reward</option>
-          </select>
         </div>
-
-        <div class="factor-card">
-          <div class="factor-label">
-            <span class="name">Opportunity</span>
-            <span class="value-badge" id="badge-o">0</span>
-            <span class="tooltip-icon">?<span class="tip">What resources and opportunities are required for this group of threat agents to find and exploit this vulnerability?</span></span>
-          </div>
-          <select class="factor-select" id="o" onchange="calculate()">
-            <option value="0">0 — Full access or expensive resources required</option>
-            <option value="4">4 — Special access or resources required</option>
-            <option value="7">7 — Some access or resources required</option>
-            <option value="9">9 — No access or resources required</option>
-          </select>
-        </div>
-
-        <div class="factor-card">
-          <div class="factor-label">
-            <span class="name">Size</span>
-            <span class="value-badge" id="badge-s">2</span>
-            <span class="tooltip-icon">?<span class="tip">How large is this group of threat agents?</span></span>
-          </div>
-          <select class="factor-select" id="s" onchange="calculate()">
-            <option value="2">2 — Developers, system administrators</option>
-            <option value="4">4 — Intranet users</option>
-            <option value="5">5 — Partners</option>
-            <option value="6">6 — Authenticated users</option>
-            <option value="9">9 — Anonymous Internet users</option>
-          </select>
-        </div>
-
-        <div class="score-bar">
-          <span class="label">Threat Agent</span>
-          <div class="track"><div class="fill" id="bar-ta"></div></div>
-          <span class="score-val" id="val-ta">—</span>
-        </div>
-      </div>
-
-      <!-- Vulnerability Factors -->
-      <div class="factor-group">
-        <div class="factor-group-title">Vulnerability Factors</div>
-
-        <div class="factor-card">
-          <div class="factor-label">
-            <span class="name">Ease of Discovery</span>
-            <span class="value-badge" id="badge-ed">1</span>
-            <span class="tooltip-icon">?<span class="tip">How easy is it for this group of threat agents to discover this vulnerability?</span></span>
-          </div>
-          <select class="factor-select" id="ed" onchange="calculate()">
-            <option value="1">1 — Practically impossible</option>
-            <option value="3">3 — Difficult</option>
-            <option value="7">7 — Easy</option>
-            <option value="9">9 — Automated tools available</option>
-          </select>
-        </div>
-
-        <div class="factor-card">
-          <div class="factor-label">
-            <span class="name">Ease of Exploit</span>
-            <span class="value-badge" id="badge-ee">1</span>
-            <span class="tooltip-icon">?<span class="tip">How easy is it for this group of threat agents to actually exploit this vulnerability?</span></span>
-          </div>
-          <select class="factor-select" id="ee" onchange="calculate()">
-            <option value="1">1 — Theoretical</option>
-            <option value="3">3 — Difficult</option>
-            <option value="5">5 — Easy</option>
-            <option value="9">9 — Automated tools available</option>
-          </select>
-        </div>
-
-        <div class="factor-card">
-          <div class="factor-label">
-            <span class="name">Awareness</span>
-            <span class="value-badge" id="badge-a">1</span>
-            <span class="tooltip-icon">?<span class="tip">How well known is this vulnerability to this group of threat agents?</span></span>
-          </div>
-          <select class="factor-select" id="a" onchange="calculate()">
-            <option value="1">1 — Unknown</option>
-            <option value="4">4 — Hidden</option>
-            <option value="6">6 — Obvious</option>
-            <option value="9">9 — Public knowledge</option>
-          </select>
-        </div>
-
-        <div class="factor-card">
-          <div class="factor-label">
-            <span class="name">Intrusion Detection</span>
-            <span class="value-badge" id="badge-id">1</span>
-            <span class="tooltip-icon">?<span class="tip">How likely is an exploit to be detected?</span></span>
-          </div>
-          <select class="factor-select" id="id" onchange="calculate()">
-            <option value="1">1 — Active detection in application</option>
-            <option value="3">3 — Logged and reviewed</option>
-            <option value="8">8 — Logged without review</option>
-            <option value="9">9 — Not logged</option>
-          </select>
-        </div>
-
-        <div class="score-bar">
-          <span class="label">Vulnerability</span>
-          <div class="track"><div class="fill" id="bar-vf"></div></div>
-          <span class="score-val" id="val-vf">—</span>
-        </div>
-      </div>
-
-      <div class="score-bar" style="border:1px solid var(--accent-blue);background:rgba(77,142,255,0.05)">
-        <span class="label" style="color:var(--accent-blue);font-weight:600">Overall Likelihood</span>
-        <div class="track"><div class="fill" id="bar-lf"></div></div>
-        <span class="score-val" id="val-lf" style="color:var(--accent-blue)">—</span>
       </div>
     </div>
 
-    <!-- ════════════════ IMPACT ════════════════ -->
+    <!-- ══════ IMPACT ══════ -->
     <div>
-      <div class="section-title">
-        <span class="icon" style="background:var(--critical-color)">I</span>
-        Impact Factors
-      </div>
-
-      <!-- Technical Impact -->
-      <div class="factor-group">
-        <div class="factor-group-title">Technical Impact Factors</div>
-
-        <div class="factor-card">
-          <div class="factor-label">
-            <span class="name">Loss of Confidentiality</span>
-            <span class="value-badge" id="badge-lc">2</span>
-            <span class="tooltip-icon">?<span class="tip">How much data could be disclosed and how sensitive is it?</span></span>
-          </div>
-          <select class="factor-select" id="lc" onchange="calculate()">
-            <option value="2">2 — Minimal non-sensitive data disclosed</option>
-            <option value="6" data-alt="a">6 — Minimal critical data disclosed</option>
-            <option value="6" data-alt="b">6 — Extensive non-sensitive data disclosed</option>
-            <option value="7">7 — Extensive critical data disclosed</option>
-            <option value="9">9 — All data disclosed</option>
-          </select>
+      <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.4rem;flex-wrap:wrap">
+        <div class="sec-score bc-note" id="sec-if" style="flex:1;min-width:200px">
+          <span style="font-size:0.7rem;color:var(--text2);font-weight:600">Impact</span>
+          <div class="trk"><div class="fl" id="bar-if"></div></div>
+          <span class="sv" id="val-if">—</span>
         </div>
-
-        <div class="factor-card">
-          <div class="factor-label">
-            <span class="name">Loss of Integrity</span>
-            <span class="value-badge" id="badge-li">1</span>
-            <span class="tooltip-icon">?<span class="tip">How much data could be corrupted and how damaged is it?</span></span>
-          </div>
-          <select class="factor-select" id="li" onchange="calculate()">
-            <option value="1">1 — Minimal slightly corrupt data</option>
-            <option value="3">3 — Minimal seriously corrupt data</option>
-            <option value="5">5 — Extensive slightly corrupt data</option>
-            <option value="7">7 — Extensive seriously corrupt data</option>
-            <option value="9">9 — All data totally corrupt</option>
-          </select>
-        </div>
-
-        <div class="factor-card">
-          <div class="factor-label">
-            <span class="name">Loss of Availability</span>
-            <span class="value-badge" id="badge-lav">1</span>
-            <span class="tooltip-icon">?<span class="tip">How much service could be lost and how vital is it?</span></span>
-          </div>
-          <select class="factor-select" id="lav" onchange="calculate()">
-            <option value="1">1 — Minimal secondary services interrupted</option>
-            <option value="5" data-alt="a">5 — Minimal primary services interrupted</option>
-            <option value="5" data-alt="b">5 — Extensive secondary services interrupted</option>
-            <option value="7">7 — Extensive primary services interrupted</option>
-            <option value="9">9 — All services completely lost</option>
-          </select>
-        </div>
-
-        <div class="factor-card">
-          <div class="factor-label">
-            <span class="name">Loss of Accountability</span>
-            <span class="value-badge" id="badge-lac">1</span>
-            <span class="tooltip-icon">?<span class="tip">Are the threat agents' actions traceable to an individual?</span></span>
-          </div>
-          <select class="factor-select" id="lac" onchange="calculate()">
-            <option value="1">1 — Fully traceable</option>
-            <option value="7">7 — Possibly traceable</option>
-            <option value="9">9 — Completely anonymous</option>
-          </select>
-        </div>
-
-        <div class="score-bar">
-          <span class="label">Technical Impact</span>
-          <div class="track"><div class="fill" id="bar-ti"></div></div>
-          <span class="score-val" id="val-ti">—</span>
+        <div class="imp-tog" style="margin-top:0">
+          <button id="tog-tech" class="act" onclick="setMode('technical')">Technical</button>
+          <button id="tog-biz" onclick="setMode('business')">Business</button>
+          <button id="tog-worst" onclick="setMode('worst')">Worst Case</button>
         </div>
       </div>
-
-      <!-- Business Impact -->
-      <div class="factor-group">
-        <div class="factor-group-title">Business Impact Factors</div>
-
-        <div class="factor-card">
-          <div class="factor-label">
-            <span class="name">Financial Damage</span>
-            <span class="value-badge" id="badge-fd">1</span>
-            <span class="tooltip-icon">?<span class="tip">How much financial damage will result from an exploit?</span></span>
+      <div class="half">
+        <!-- Technical Impact -->
+        <div>
+          <div class="col-title">Technical Impact Factors</div>
+          <div class="col-body">
+            <div class="f-row"><div class="f-label"><span class="f-name">Loss of Confidentiality</span><span class="f-tip">?<span class="tt">How much data could be disclosed and how sensitive is it?</span></span><span class="f-badge unset" id="b-lc">—</span></div><select class="fs unset" id="lc" onchange="calculate()"><option value="-1" selected disabled>— Select —</option><option value="0">0 - N/A</option><option value="1">1</option><option value="2">2 - Minimal non-sensitive data disclosed</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6 - Minimal critical or extensive non-sensitive data disclosed</option><option value="7">7 - Extensive critical data disclosed</option><option value="8">8</option><option value="9">9 - All data disclosed</option></select></div>
+            <div class="f-row"><div class="f-label"><span class="f-name">Loss of Integrity</span><span class="f-tip">?<span class="tt">How much data could be corrupted and how damaged is it?</span></span><span class="f-badge unset" id="b-li">—</span></div><select class="fs unset" id="li" onchange="calculate()"><option value="-1" selected disabled>— Select —</option><option value="0">0 - N/A</option><option value="1">1 - Minimal slightly corrupt data</option><option value="2">2</option><option value="3">3 - Minimal seriously corrupt data</option><option value="4">4</option><option value="5">5 - Extensive slightly corrupt data</option><option value="6">6</option><option value="7">7 - Extensive seriously corrupt data</option><option value="8">8</option><option value="9">9 - All data totally corrupt</option></select></div>
+            <div class="f-row"><div class="f-label"><span class="f-name">Loss of Availability</span><span class="f-tip">?<span class="tt">How much service could be lost and how vital is it?</span></span><span class="f-badge unset" id="b-lav">—</span></div><select class="fs unset" id="lav" onchange="calculate()"><option value="-1" selected disabled>— Select —</option><option value="0">0 - N/A</option><option value="1">1 - Minimal secondary services interrupted</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 - Minimal primary or extensive secondary services interrupted</option><option value="6">6</option><option value="7">7 - Extensive primary services interrupted</option><option value="8">8</option><option value="9">9 - All services completely lost</option></select></div>
+            <div class="f-row"><div class="f-label"><span class="f-name">Loss of Accountability</span><span class="f-tip">?<span class="tt">Are the threat agents' actions traceable to an individual?</span></span><span class="f-badge unset" id="b-lac">—</span></div><select class="fs unset" id="lac" onchange="calculate()"><option value="-1" selected disabled>— Select —</option><option value="0">0 - N/A</option><option value="1">1 - Fully traceable</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7 - Possibly traceable</option><option value="8">8</option><option value="9">9 - Completely anonymous</option></select></div>
+            <div class="sub-score"><span class="sl">Technical Impact</span><div class="trk"><div class="fl" id="bar-ti"></div></div><span class="sv" id="val-ti">—</span></div>
+            <div class="notes-area"><button class="notes-toggle" onclick="toggleNotes(this)">Notes</button><div class="notes-box"><span class="notes-print-label">Technical Impact Notes:</span><textarea id="notes-ti" placeholder="Reasoning for technical impact selections..."></textarea></div></div>
           </div>
-          <select class="factor-select" id="fd" onchange="calculate()">
-            <option value="1">1 — Less than the cost to fix the vulnerability</option>
-            <option value="3">3 — Minor effect on annual profit</option>
-            <option value="7">7 — Significant effect on annual profit</option>
-            <option value="9">9 — Bankruptcy</option>
-          </select>
         </div>
-
-        <div class="factor-card">
-          <div class="factor-label">
-            <span class="name">Reputation Damage</span>
-            <span class="value-badge" id="badge-rd">1</span>
-            <span class="tooltip-icon">?<span class="tip">Would an exploit result in reputation damage that would harm the business?</span></span>
+        <!-- Business Impact -->
+        <div>
+          <div class="col-title">Business Impact Factors</div>
+          <div class="col-body">
+            <div class="f-row"><div class="f-label"><span class="f-name">Financial Damage</span><span class="f-tip">?<span class="tt">How much financial damage will result from an exploit?</span></span><span class="f-badge unset" id="b-fd">—</span></div><select class="fs unset" id="fd" onchange="calculate()"><option value="-1" selected disabled>— Select —</option><option value="0">0 - N/A</option><option value="1">1 - Less than the cost to fix the vulnerability</option><option value="2">2</option><option value="3">3 - Minor effect on annual profit</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7 - Significant effect on annual profit</option><option value="8">8</option><option value="9">9 - Bankruptcy</option></select></div>
+            <div class="f-row"><div class="f-label"><span class="f-name">Reputation Damage</span><span class="f-tip">?<span class="tt">Would an exploit result in reputation damage that would harm the business?</span></span><span class="f-badge unset" id="b-rd">—</span></div><select class="fs unset" id="rd" onchange="calculate()"><option value="-1" selected disabled>— Select —</option><option value="0">0 - N/A</option><option value="1">1 - Minimal damage</option><option value="2">2</option><option value="3">3</option><option value="4">4 - Loss of major accounts</option><option value="5">5 - Loss of goodwill</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9 - Brand damage</option></select></div>
+            <div class="f-row"><div class="f-label"><span class="f-name">Non-compliance</span><span class="f-tip">?<span class="tt">How much exposure does non-compliance introduce?</span></span><span class="f-badge unset" id="b-nc">—</span></div><select class="fs unset" id="nc" onchange="calculate()"><option value="-1" selected disabled>— Select —</option><option value="0">0 - N/A</option><option value="1">1</option><option value="2">2 - Minor violation</option><option value="3">3</option><option value="4">4</option><option value="5">5 - Clear violation</option><option value="6">6</option><option value="7">7 - High profile violation</option><option value="8">8</option><option value="9">9</option></select></div>
+            <div class="f-row"><div class="f-label"><span class="f-name">Privacy Violation</span><span class="f-tip">?<span class="tt">How much personally identifiable information could be disclosed?</span></span><span class="f-badge unset" id="b-pv">—</span></div><select class="fs unset" id="pv" onchange="calculate()"><option value="-1" selected disabled>— Select —</option><option value="0">0 - N/A</option><option value="1">1</option><option value="2">2</option><option value="3">3 - One individual</option><option value="4">4</option><option value="5">5 - Hundreds of people</option><option value="6">6</option><option value="7">7 - Thousands of people</option><option value="8">8</option><option value="9">9 - Millions of people</option></select></div>
+            <div class="sub-score"><span class="sl">Business Impact</span><div class="trk"><div class="fl" id="bar-bi"></div></div><span class="sv" id="val-bi">—</span></div>
+            <div class="notes-area"><button class="notes-toggle" onclick="toggleNotes(this)">Notes</button><div class="notes-box"><span class="notes-print-label">Business Impact Notes:</span><textarea id="notes-bi" placeholder="Reasoning for business impact selections..."></textarea></div></div>
           </div>
-          <select class="factor-select" id="rd" onchange="calculate()">
-            <option value="1">1 — Minimal damage</option>
-            <option value="4">4 — Loss of major accounts</option>
-            <option value="5">5 — Loss of goodwill</option>
-            <option value="9">9 — Brand damage</option>
-          </select>
         </div>
-
-        <div class="factor-card">
-          <div class="factor-label">
-            <span class="name">Non-compliance</span>
-            <span class="value-badge" id="badge-nc">2</span>
-            <span class="tooltip-icon">?<span class="tip">How much exposure does non-compliance introduce?</span></span>
-          </div>
-          <select class="factor-select" id="nc" onchange="calculate()">
-            <option value="2">2 — Minor violation</option>
-            <option value="5">5 — Clear violation</option>
-            <option value="7">7 — High profile violation</option>
-          </select>
-        </div>
-
-        <div class="factor-card">
-          <div class="factor-label">
-            <span class="name">Privacy Violation</span>
-            <span class="value-badge" id="badge-pv">3</span>
-            <span class="tooltip-icon">?<span class="tip">How much personally identifiable information could be disclosed?</span></span>
-          </div>
-          <select class="factor-select" id="pv" onchange="calculate()">
-            <option value="3">3 — One individual</option>
-            <option value="5">5 — Hundreds of people</option>
-            <option value="7">7 — Thousands of people</option>
-            <option value="9">9 — Millions of people</option>
-          </select>
-        </div>
-
-        <div class="score-bar">
-          <span class="label">Business Impact</span>
-          <div class="track"><div class="fill" id="bar-bi"></div></div>
-          <span class="score-val" id="val-bi">—</span>
-        </div>
-      </div>
-
-      <!-- Impact mode toggle -->
-      <div style="margin-bottom:0.5rem">
-        <div style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:0.4rem">Impact calculation uses:</div>
-        <div class="impact-toggle">
-          <button id="tog-tech" class="active" onclick="setImpactMode('technical')">Technical Impact</button>
-          <button id="tog-biz" onclick="setImpactMode('business')">Business Impact</button>
-          <button id="tog-worst" onclick="setImpactMode('worst')">Worst Case</button>
-        </div>
-      </div>
-
-      <div class="score-bar" style="border:1px solid var(--critical-color);background:rgba(239,68,68,0.05)">
-        <span class="label" style="color:var(--critical-color);font-weight:600">Overall Impact</span>
-        <div class="track"><div class="fill" id="bar-if"></div></div>
-        <span class="score-val" id="val-if" style="color:var(--critical-color)">—</span>
       </div>
     </div>
   </div>
 
-  <!-- ════════════════ RESULTS ════════════════ -->
-  <div class="results-panel" id="results-panel">
-    <div class="results-grid">
-      <div class="result-cell">
-        <div class="rc-label">Likelihood</div>
-        <div class="rc-value" id="res-lf-val">—</div>
-        <div class="rc-level" id="res-lf-level">—</div>
-      </div>
-      <div class="result-cell">
-        <div class="rc-label">Impact</div>
-        <div class="rc-value" id="res-if-val">—</div>
-        <div class="rc-level" id="res-if-level">—</div>
-      </div>
-      <div class="result-cell">
-        <div class="rc-label">Risk Severity</div>
-        <div class="rc-value sev-value" id="res-sev">—</div>
-        <div class="rc-level" id="res-sev-sub">&nbsp;</div>
-      </div>
-    </div>
-    <div class="vector-panel">
-      <span class="vec-label">Vector</span>
-      <span class="vec-value" id="vector-text">—</span>
-      <button class="btn-copy" id="btn-copy-vec" onclick="copyVector()">Copy</button>
-      <button class="btn-copy" id="btn-copy-url" onclick="copyURL()">Copy URL</button>
-    </div>
+  <!-- Results -->
+  <div class="results" id="results-panel">
+    <div class="res-cell"><div class="rl">Likelihood</div><div class="rv" id="r-lf-v">—</div><div class="rs" id="r-lf-l">—</div></div>
+    <div class="res-cell"><div class="rl">Impact</div><div class="rv" id="r-if-v">—</div><div class="rs" id="r-if-l">—</div></div>
+    <div class="res-cell"><div class="rl">Overall Risk Severity</div><div class="rv" id="r-sev">—</div><div class="rs" id="r-sev-s">&nbsp;</div></div>
   </div>
-
-  <!-- ════════════════ SEVERITY MATRIX ════════════════ -->
-  <details class="matrix-section">
-    <summary>Severity Risk Matrix Reference</summary>
-    <table class="severity-matrix">
-      <thead>
-        <tr>
-          <th colspan="4">Overall Risk Severity</th>
-        </tr>
-      </thead>
+  <div class="vec-row">
+    <span class="vl">Vector</span>
+    <span class="vv" id="vec-text">—</span>
+    <button class="btn" id="btn-vec2" onclick="copyVector()">Copy</button>
+    <button class="btn" id="btn-url2" onclick="copyURL()">Copy URL</button>
+  </div>
+  <details class="mx-section">
+    <summary>Severity Matrix Reference</summary>
+    <table class="mx-table">
+      <thead><tr><th colspan="4">Overall Risk Severity</th></tr></thead>
       <tbody>
-        <tr>
-          <th class="row-label">Impact</th>
-          <th>LOW<br><span style="font-weight:400;font-size:0.65rem">Likelihood</span></th>
-          <th>MEDIUM<br><span style="font-weight:400;font-size:0.65rem">Likelihood</span></th>
-          <th>HIGH<br><span style="font-weight:400;font-size:0.65rem">Likelihood</span></th>
-        </tr>
-        <tr>
-          <td class="row-label">HIGH</td>
-          <td class="cell-medium" id="mx-lh">Medium</td>
-          <td class="cell-high" id="mx-mh">High</td>
-          <td class="cell-critical" id="mx-hh">Critical</td>
-        </tr>
-        <tr>
-          <td class="row-label">MEDIUM</td>
-          <td class="cell-low" id="mx-lm">Low</td>
-          <td class="cell-medium" id="mx-mm">Medium</td>
-          <td class="cell-high" id="mx-hm">High</td>
-        </tr>
-        <tr>
-          <td class="row-label">LOW</td>
-          <td class="cell-note" id="mx-ll">Note</td>
-          <td class="cell-low" id="mx-ml">Low</td>
-          <td class="cell-medium" id="mx-hl">Medium</td>
-        </tr>
+        <tr><th></th><th>LOW Likelihood</th><th>MEDIUM Likelihood</th><th>HIGH Likelihood</th></tr>
+        <tr><td class="rl">HIGH Impact</td><td class="cl-med bl-med" id="mx-lh">Medium</td><td class="cl-high bl-high" id="mx-mh">High</td><td class="cl-crit bl-crit" id="mx-hh">Critical</td></tr>
+        <tr><td class="rl">MEDIUM Impact</td><td class="cl-low bl-low" id="mx-lm">Low</td><td class="cl-med bl-med" id="mx-mm">Medium</td><td class="cl-high bl-high" id="mx-hm">High</td></tr>
+        <tr><td class="rl">LOW Impact</td><td class="cl-note bl-note" id="mx-ll">Note</td><td class="cl-low bl-low" id="mx-ml">Low</td><td class="cl-med bl-med" id="mx-hl">Medium</td></tr>
       </tbody>
     </table>
-    <p style="margin-top:0.75rem;font-size:0.78rem;color:var(--text-muted)">
-      Levels: 0 to &lt;3 = LOW &nbsp;|&nbsp; 3 to &lt;6 = MEDIUM &nbsp;|&nbsp; 6 to 9 = HIGH
-    </p>
+    <p style="margin-top:0.3rem;font-size:0.65rem;color:var(--text3)">0 to &lt;3 = LOW &nbsp;|&nbsp; 3 to &lt;6 = MEDIUM &nbsp;|&nbsp; 6 to 9 = HIGH</p>
   </details>
 </main>
 
-<footer class="page-footer">
-  Based on the <a href="https://owasp.org/www-community/OWASP_Risk_Rating_Methodology" target="_blank" rel="noopener">OWASP Risk Rating Methodology</a> by Jeff Williams.
-  <br>Calculator rebuilt for community use. Not affiliated with or endorsed by the OWASP Foundation.
-</footer>
+<footer class="ftr">Based on the <a href="https://owasp.org/www-community/OWASP_Risk_Rating_Methodology" target="_blank" rel="noopener">OWASP Risk Rating Methodology</a> by Jeff Williams. Not affiliated with or endorsed by the OWASP Foundation.</footer>
 
 <script>
-// ── Factor IDs ──
-const FACTORS = {
-  // Likelihood
-  sl: 'badge-sl', m: 'badge-m', o: 'badge-o', s: 'badge-s',
-  ed: 'badge-ed', ee: 'badge-ee', a: 'badge-a', id: 'badge-id',
-  // Impact
-  lc: 'badge-lc', li: 'badge-li', lav: 'badge-lav', lac: 'badge-lac',
-  fd: 'badge-fd', rd: 'badge-rd', nc: 'badge-nc', pv: 'badge-pv'
-};
+const ALL=['sl','m','o','s','ed','ee','a','id','lc','li','lav','lac','fd','rd','nc','pv'];
+const TA=['sl','m','o','s'],VF=['ed','ee','a','id'],TI=['lc','li','lav','lac'],BI=['fd','rd','nc','pv'];
+const LABELS={sl:'Skill Level',m:'Motive',o:'Opportunity',s:'Size',ed:'Ease of Discovery',ee:'Ease of Exploit',a:'Awareness',id:'Intrusion Detection',lc:'Loss of Confidentiality',li:'Loss of Integrity',lav:'Loss of Availability',lac:'Loss of Accountability',fd:'Financial Damage',rd:'Reputation Damage',nc:'Non-compliance',pv:'Privacy Violation'};
+const VK={sl:'SL',m:'M',o:'O',s:'S',ed:'ED',ee:'EE',a:'A',id:'ID',lc:'LC',li:'LI',lav:'LAV',lac:'LAC',fd:'FD',rd:'RD',nc:'NC',pv:'PV'};
+const VR={};Object.entries(VK).forEach(([k,v])=>VR[v]=k);
+let impactMode='technical';
 
-const TA_IDS = ['sl','m','o','s'];
-const VF_IDS = ['ed','ee','a','id'];
-const TI_IDS = ['lc','li','lav','lac'];
-const BI_IDS = ['fd','rd','nc','pv'];
+function gv(id){const v=parseFloat(document.getElementById(id).value);return isNaN(v)||v<0?null:v}
+function avg(ids){const v=ids.map(gv).filter(x=>x!==null);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null}
+function lvl(s){if(s===null)return null;return s<3?'LOW':s<6?'MEDIUM':'HIGH'}
+function lc(l){return{LOW:'low',MEDIUM:'med',HIGH:'high'}[l]||'note'}
+function sc(s){return{NOTE:'note',LOW:'low',MEDIUM:'med',HIGH:'high',CRITICAL:'crit'}[s]||'note'}
+function sev(ll,il){return{'LOW-LOW':'NOTE','LOW-MEDIUM':'LOW','LOW-HIGH':'MEDIUM','MEDIUM-LOW':'LOW','MEDIUM-MEDIUM':'MEDIUM','MEDIUM-HIGH':'HIGH','HIGH-LOW':'MEDIUM','HIGH-MEDIUM':'HIGH','HIGH-HIGH':'CRITICAL'}[ll+'-'+il]||'NOTE'}
 
-let impactMode = 'technical'; // 'technical' | 'business' | 'worst'
+function uBar(bId,vId,s){const b=document.getElementById(bId),v=document.getElementById(vId);if(s===null){b.style.width='0%';b.className='fl';v.textContent='—';v.className='sv';return}const p=(s/9)*100,c=lc(lvl(s));b.style.width=p+'%';b.className='fl fl-'+c;v.textContent=s.toFixed(2);v.className='sv c-'+c}
+function uSec(eId,bId,vId,s){uBar(bId,vId,s);const e=document.getElementById(eId);e.className='sec-score bc-'+(s!==null?lc(lvl(s)):'note')}
+function uBadge(f){const v=gv(f),b=document.getElementById('b-'+f),s=document.getElementById(f);if(v===null){b.textContent='—';b.className='f-badge unset';s.classList.add('unset')}else{const c=lc(lvl(v));b.textContent=v;b.className='f-badge c-'+c+' bg-'+c;s.classList.remove('unset')}}
 
-function val(id) {
-  const el = document.getElementById(id);
-  return parseFloat(el.value);
+function updateUnset(){
+  const u=ALL.filter(id=>gv(id)===null),w=document.getElementById('unset-warn');
+  if(!u.length){w.classList.remove('show');return}
+  w.classList.add('show');
+  document.getElementById('unset-list').textContent=u.map(id=>LABELS[id]).join(', ');
 }
 
-function avg(ids) {
-  const sum = ids.reduce((s, id) => s + val(id), 0);
-  return sum / ids.length;
+function hlMatrix(ll,il){
+  document.querySelectorAll('.mx-table td:not(.rl)').forEach(t=>t.classList.remove('hl-cell'));
+  if(!ll||!il)return;
+  const m={LOW:'l',MEDIUM:'m',HIGH:'h'},c=document.getElementById('mx-'+m[ll]+m[il]);
+  if(c)c.classList.add('hl-cell');
 }
 
-function getLevel(score) {
-  if (score < 3) return 'LOW';
-  if (score < 6) return 'MEDIUM';
-  return 'HIGH';
+function buildVec(){return'('+ALL.map(id=>VK[id]+':'+(gv(id)??0)).join('/')+')'}
+
+function calculate(){
+  ALL.forEach(uBadge);updateUnset();
+  const ta=avg(TA);uBar('bar-ta','val-ta',ta);
+  const vf=avg(VF);uBar('bar-vf','val-vf',vf);
+  const lk=ta!==null&&vf!==null?(ta+vf)/2:ta??vf;
+  uSec('sec-lf','bar-lf','val-lf',lk);
+  const ti=avg(TI);uBar('bar-ti','val-ti',ti);
+  const bi=avg(BI);uBar('bar-bi','val-bi',bi);
+  let imp;if(impactMode==='technical')imp=ti;else if(impactMode==='business')imp=bi;else imp=ti!==null&&bi!==null?Math.max(ti,bi):ti??bi;
+  uSec('sec-if','bar-if','val-if',imp);
+  const ll=lvl(lk),il=lvl(imp),lc2=ll?lc(ll):'note',ic2=il?lc(il):'note';
+  const rlv=document.getElementById('r-lf-v'),rll=document.getElementById('r-lf-l');
+  rlv.textContent=lk!==null?lk.toFixed(2):'—';rlv.className='rv c-'+lc2;rll.textContent=ll||'—';rll.className='rs c-'+lc2;
+  const riv=document.getElementById('r-if-v'),ril=document.getElementById('r-if-l');
+  riv.textContent=imp!==null?imp.toFixed(2):'—';riv.className='rv c-'+ic2;ril.textContent=il||'—';ril.className='rs c-'+ic2;
+  let sv='—',svc='note';if(ll&&il){sv=sev(ll,il);svc=sc(sv)}
+  document.getElementById('r-sev').textContent=sv;document.getElementById('r-sev').className='rv c-'+svc;
+  document.getElementById('results-panel').style.borderColor=sv!=='—'?'var(--'+svc+'-c)':'var(--border)';
+  hlMatrix(ll,il);
+  document.getElementById('vec-text').textContent=buildVec();
+  updateHash();
+  // Mark textareas for print visibility
+  document.querySelectorAll('.notes-box textarea').forEach(ta=>{ta.setAttribute('data-empty',ta.value.trim()===''?'true':'false')});
 }
 
-function getLevelClass(level) {
-  return { 'LOW': 'low', 'MEDIUM': 'medium', 'HIGH': 'high' }[level] || 'note';
-}
-
-function getSeverity(likelihoodLevel, impactLevel) {
-  const matrix = {
-    'LOW-LOW': 'NOTE',
-    'LOW-MEDIUM': 'LOW',
-    'LOW-HIGH': 'MEDIUM',
-    'MEDIUM-LOW': 'LOW',
-    'MEDIUM-MEDIUM': 'MEDIUM',
-    'MEDIUM-HIGH': 'HIGH',
-    'HIGH-LOW': 'MEDIUM',
-    'HIGH-MEDIUM': 'HIGH',
-    'HIGH-HIGH': 'CRITICAL'
-  };
-  return matrix[likelihoodLevel + '-' + impactLevel] || 'NOTE';
-}
-
-function getSeverityClass(sev) {
-  return { 'NOTE': 'note', 'LOW': 'low', 'MEDIUM': 'medium', 'HIGH': 'high', 'CRITICAL': 'critical' }[sev] || 'note';
-}
-
-function updateBar(barId, valId, score) {
-  const pct = (score / 9) * 100;
-  const level = getLevel(score);
-  const cls = getLevelClass(level);
-  const bar = document.getElementById(barId);
-  const valEl = document.getElementById(valId);
-  bar.style.width = pct + '%';
-  bar.className = 'fill fill-' + cls;
-  valEl.textContent = score.toFixed(2);
-  valEl.className = 'score-val c-' + cls;
-}
-
-function updateBadge(factorId) {
-  const v = val(factorId);
-  const badge = document.getElementById(FACTORS[factorId]);
-  const level = getLevel(v);
-  const cls = getLevelClass(level);
-  badge.textContent = v;
-  badge.className = 'value-badge c-' + cls + ' bg-' + cls;
-}
-
-function updateMatrixHighlight(likelihoodLevel, impactLevel) {
-  // Clear all highlights
-  document.querySelectorAll('.severity-matrix td').forEach(td => td.classList.remove('highlight-cell'));
-  // Map to cell ID
-  const lMap = { 'LOW': 'l', 'MEDIUM': 'm', 'HIGH': 'h' };
-  const iMap = { 'LOW': 'l', 'MEDIUM': 'm', 'HIGH': 'h' };
-  const cellId = 'mx-' + lMap[likelihoodLevel] + iMap[impactLevel];
-  const cell = document.getElementById(cellId);
-  if (cell) cell.classList.add('highlight-cell');
-}
-
-function buildVector() {
-  const parts = [
-    'SL:' + val('sl'), 'M:' + val('m'), 'O:' + val('o'), 'S:' + val('s'),
-    'ED:' + val('ed'), 'EE:' + val('ee'), 'A:' + val('a'), 'ID:' + val('id'),
-    'LC:' + val('lc'), 'LI:' + val('li'), 'LAV:' + val('lav'), 'LAC:' + val('lac'),
-    'FD:' + val('fd'), 'RD:' + val('rd'), 'NC:' + val('nc'), 'PV:' + val('pv')
-  ];
-  return '(' + parts.join('/') + ')';
-}
-
-function setImpactMode(mode) {
-  impactMode = mode;
-  document.getElementById('tog-tech').classList.toggle('active', mode === 'technical');
-  document.getElementById('tog-biz').classList.toggle('active', mode === 'business');
-  document.getElementById('tog-worst').classList.toggle('active', mode === 'worst');
+function setMode(m){
+  impactMode=m;
+  document.getElementById('tog-tech').classList.toggle('act',m==='technical');
+  document.getElementById('tog-biz').classList.toggle('act',m==='business');
+  document.getElementById('tog-worst').classList.toggle('act',m==='worst');
   calculate();
 }
 
-function calculate() {
-  // Update all badges
-  Object.keys(FACTORS).forEach(updateBadge);
-
-  // Threat Agent
-  const ta = avg(TA_IDS);
-  updateBar('bar-ta', 'val-ta', ta);
-
-  // Vulnerability
-  const vf = avg(VF_IDS);
-  updateBar('bar-vf', 'val-vf', vf);
-
-  // Likelihood
-  const likelihood = (ta + vf) / 2;
-  updateBar('bar-lf', 'val-lf', likelihood);
-
-  // Technical Impact
-  const ti = avg(TI_IDS);
-  updateBar('bar-ti', 'val-ti', ti);
-
-  // Business Impact
-  const bi = avg(BI_IDS);
-  updateBar('bar-bi', 'val-bi', bi);
-
-  // Overall Impact based on mode
-  let impact;
-  if (impactMode === 'technical') impact = ti;
-  else if (impactMode === 'business') impact = bi;
-  else impact = Math.max(ti, bi);
-  updateBar('bar-if', 'val-if', impact);
-
-  // Levels
-  const lLevel = getLevel(likelihood);
-  const iLevel = getLevel(impact);
-  const severity = getSeverity(lLevel, iLevel);
-  const sevClass = getSeverityClass(severity);
-
-  // Results panel
-  const lCls = getLevelClass(lLevel);
-  document.getElementById('res-lf-val').textContent = likelihood.toFixed(2);
-  document.getElementById('res-lf-val').className = 'rc-value c-' + lCls;
-  document.getElementById('res-lf-level').textContent = lLevel;
-  document.getElementById('res-lf-level').className = 'rc-level c-' + lCls;
-
-  const iCls = getLevelClass(iLevel);
-  document.getElementById('res-if-val').textContent = impact.toFixed(2);
-  document.getElementById('res-if-val').className = 'rc-value c-' + iCls;
-  document.getElementById('res-if-level').textContent = iLevel;
-  document.getElementById('res-if-level').className = 'rc-level c-' + iCls;
-
-  document.getElementById('res-sev').textContent = severity;
-  document.getElementById('res-sev').className = 'rc-value sev-value c-' + sevClass;
-  document.getElementById('res-sev-sub').innerHTML = '&nbsp;';
-
-  // Severity banner bg
-  const panel = document.getElementById('results-panel');
-  panel.style.borderColor = 'var(--' + sevClass + '-color)';
-
-  // Matrix highlight
-  updateMatrixHighlight(lLevel, iLevel);
-
-  // Vector
-  const vector = buildVector();
-  document.getElementById('vector-text').textContent = vector;
-
-  // Update URL hash
-  updateHash();
+function parseVec(str){
+  const r={};str.replace(/[()]/g,'').split('/').forEach(p=>{const[k,v]=p.split(':');if(k&&v!==undefined){const f=VR[k.toUpperCase()];if(f)r[f]=parseInt(v)}});return r;
 }
 
-function updateHash() {
-  const params = [];
-  Object.keys(FACTORS).forEach(id => {
-    const el = document.getElementById(id);
-    params.push(id + '=' + el.selectedIndex);
-  });
-  params.push('im=' + impactMode);
-  history.replaceState(null, '', '#' + params.join('&'));
-}
-
-function loadFromHash() {
-  const hash = window.location.hash.substring(1);
-  if (!hash) return;
-  const params = {};
-  hash.split('&').forEach(p => {
-    const [k, v] = p.split('=');
-    params[k] = v;
-  });
-  Object.keys(FACTORS).forEach(id => {
-    if (params[id] !== undefined) {
-      const el = document.getElementById(id);
-      const idx = parseInt(params[id]);
-      if (idx >= 0 && idx < el.options.length) el.selectedIndex = idx;
-    }
-  });
-  if (params.im) {
-    impactMode = params.im;
-    document.getElementById('tog-tech').classList.toggle('active', impactMode === 'technical');
-    document.getElementById('tog-biz').classList.toggle('active', impactMode === 'business');
-    document.getElementById('tog-worst').classList.toggle('active', impactMode === 'worst');
-  }
-}
-
-function copyVector() {
-  const text = document.getElementById('vector-text').textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('btn-copy-vec');
-    btn.textContent = 'Copied!';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+function applyVec(vals){
+  ALL.forEach(id=>{
+    if(vals[id]===undefined||isNaN(vals[id]))return;
+    const sel=document.getElementById(id),t=vals[id];
+    for(let i=0;i<sel.options.length;i++){if(parseInt(sel.options[i].value)===t){sel.selectedIndex=i;break}}
   });
 }
 
-function copyURL() {
-  navigator.clipboard.writeText(window.location.href).then(() => {
-    const btn = document.getElementById('btn-copy-url');
-    btn.textContent = 'Copied!';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Copy URL'; btn.classList.remove('copied'); }, 1500);
+function updateHash(){history.replaceState(null,'','#'+buildVec())}
+
+function loadFromURL(){
+  let h=window.location.hash.substring(1);
+  if(!h){const p=new URLSearchParams(window.location.search);h=p.get('vector')||p.get('v')||''}
+  if(!h||!h.includes(':'))return false;
+  const vals=parseVec(h);
+  if(Object.keys(vals).length>0){applyVec(vals);return true}
+  return false;
+}
+
+function resetAll(){
+  ALL.forEach(id=>{document.getElementById(id).selectedIndex=0});
+  document.querySelectorAll('.notes-box textarea').forEach(t=>{t.value=''});
+  document.querySelectorAll('.notes-box').forEach(n=>{n.classList.remove('show')});
+  document.querySelectorAll('.notes-toggle').forEach(n=>{n.classList.remove('open')});
+  calculate();
+}
+function toggleNotes(btn){btn.classList.toggle('open');btn.nextElementSibling.classList.toggle('show')}
+function copyVector(){
+  navigator.clipboard.writeText(document.getElementById('vec-text').textContent).then(()=>{
+    ['btn-vec','btn-vec2'].forEach(id=>{const b=document.getElementById(id);if(!b)return;b.textContent='Copied!';b.classList.add('copied');setTimeout(()=>{b.textContent=id.includes('2')?'Copy':'Copy Vector';b.classList.remove('copied')},1500)});
+  });
+}
+function copyURL(){
+  navigator.clipboard.writeText(window.location.href).then(()=>{
+    ['btn-url','btn-url2'].forEach(id=>{const b=document.getElementById(id);if(!b)return;b.textContent='Copied!';b.classList.add('copied');setTimeout(()=>{b.textContent='Copy URL';b.classList.remove('copied')},1500)});
   });
 }
 
-// ── Init ──
-loadFromHash();
+// Init
+loadFromURL();
 calculate();
 </script>
 </body>
